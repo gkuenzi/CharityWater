@@ -1,0 +1,20 @@
+body {
+  margin: 0;
+  padding: 0;
+  background: url(img/water-surface-seamless-pattern-cartoon-blue-texture_53562-18278.avif);
+   background-size: cover;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 100vh;
+  flex-direction: column;
+}
+
+#gameCanvas {
+    background:url(img/Overhead-RoyaltyFree-Desert-Environment.jpg);
+    border: #fff9e9 8px solid;
+    border-radius: 15px;
+    background-size: 150% 150%; /* makes the image 20% larger */
+    background-size: cover;
+    background-repeat: no-repeat;
+}
