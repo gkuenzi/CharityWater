@@ -4,26 +4,104 @@ const ctx = canvas.getContext('2d');
 let player = {
     x: canvas.width - canvas.width / 5,
     y: canvas.height - canvas.height / 5,
-    radius: 40,
+    radius: 35,
     speed: 5,
     img: new Image(),
     angle: 0
 };
 
 const truck = {
-    x: canvas.width - canvas.width / 15,
-    y: canvas.height - canvas.height / 5,
-    width: 450,
-    height: 325,
+    x: canvas.width - canvas.width / 18,
+    y: canvas.height - canvas.height / 6,
+    width: 115,
+    height: 230,
     img: new Image()
 };
-truck.img.src = 'img/watertruck-full-charity-water-pickup-truck-png-Photoroom.png';
+truck.img.src = 'img/Water-truck-Photoroom.png';
 
 player.img.src = 'img/EmptyBucketSprite-Photoroom.png';
+emptyBucket = true;
 
 let imagesLoaded = 0;
 
-player.img.onload = truck.img.onload = function() {
+let villageSpawnAmount = 3; // Amount of villages spawned on screen
+const spawnImgSrc = 'img/house-village-city-atl-png.webp';
+
+const spawnImg = new Image();
+spawnImg.src = spawnImgSrc;
+
+function spawnRandomImages(amount) {
+    const images = [];
+    const minDist = spawnImg.width; // Minimum allowed distance between centers
+    const playerBuffer = player.radius * 2; // Minimum distance from player
+    // Red rectangle properties (adjust to match your actual values)
+    const rectWidth = 150;
+    const rectHeight = 300;
+    const rectX = canvas.width - canvas.width / 11;
+    const rectY = canvas.height - canvas.height / 3.3;
+
+    for (let i = 0; i < amount; i++) {
+        let tries = 0;
+        let x, y, valid;
+        do {
+            x = Math.random() * (canvas.width - spawnImg.width) + spawnImg.width / 2;
+            y = Math.random() * (canvas.height - spawnImg.height) + spawnImg.height / 2;
+            valid = true;
+
+            // 1. Check distance from other images
+            for (const img of images) {
+                const dx = x - img.x;
+                const dy = y - img.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < minDist) {
+                    valid = false;
+                    break;
+                }
+            }
+
+            // 2. Check distance from player spawn
+            const dxPlayer = x - player.x;
+            const dyPlayer = y - player.y;
+            const distPlayer = Math.sqrt(dxPlayer * dxPlayer + dyPlayer * dyPlayer);
+            if (distPlayer < playerBuffer + spawnImg.width / 2) {
+                valid = false;
+            }
+
+            // 3. Check overlap with red rectangle
+            const left = x - spawnImg.width / 2;
+            const right = x + spawnImg.width / 2;
+            const top = y - spawnImg.height / 2;
+            const bottom = y + spawnImg.height / 2;
+            const rectLeft = rectX;
+            const rectRight = rectX + rectWidth;
+            const rectTop = rectY;
+            const rectBottom = rectY + rectHeight;
+
+            // Check if image rectangle overlaps red rectangle
+            if (
+                right > rectLeft &&
+                left < rectRight &&
+                bottom > rectTop &&
+                top < rectBottom
+            ) {
+                valid = false;
+            }
+
+            tries++;
+            if (tries > 1000) break;
+        } while (!valid);
+        images.push({ x, y });
+    }
+    return images;
+}
+
+let randomImages = [];
+spawnImg.onload = function () {
+    randomImages = spawnRandomImages(villageSpawnAmount);
+    draw(); // Redraw after images are spawned
+};
+
+player.img.onload = truck.img.onload = function () {
     imagesLoaded++;
     if (imagesLoaded === 2) {
         draw();
@@ -33,22 +111,60 @@ player.img.onload = truck.img.onload = function() {
 
 function draw() {
     ctx.clearRect(0, 0, canvas.width, canvas.height);
-    ctx.imageSmoothingEnabled = false;
+    ctx.imageSmoothingEnabled = true;
 
-        // Drawing the Truck Detection Box
+    // Drawing the Truck Detection Box
     const rectWidth = 150;
     const rectHeight = 300;
     ctx.save();
-    ctx.fillStyle = 'blue';
-    ctx.fillRect(
-        canvas.width - canvas.width / 9,
-        canvas.height - canvas.height / 3,
+    ctx.strokeStyle = 'red';
+    ctx.strokeRect(
+        canvas.width - canvas.width / 11,
+        canvas.height - canvas.height / 3.3,
         rectWidth,
         rectHeight
     );
     ctx.restore();
 
-        // Draw the truck image
+    // Drawing a collision circle for the player
+    ctx.save();
+    ctx.beginPath();
+    ctx.arc(player.x, player.y, 36, 0, Math.PI * 2); // (centerX, centerY, radius, startAngle, endAngle)
+    ctx.strokeStyle = 'red'; // Change color as needed
+    ctx.stroke();
+    ctx.closePath();
+    ctx.restore();
+
+    if (spawnImg.complete && randomImages.length > 0) {
+        randomImages.forEach(obj => {
+            ctx.drawImage(
+                spawnImg,
+                obj.x - spawnImg.width / 2,
+                obj.y - spawnImg.height / 2
+            );
+        });
+    }
+
+    randomImages.forEach(obj => {
+        // Draw the image
+        ctx.drawImage(
+            spawnImg,
+            obj.x - spawnImg.width / 2,
+            obj.y - spawnImg.height / 2
+        );
+
+        // Draw the collision circle for the villages
+        ctx.save();
+        ctx.beginPath();
+        ctx.arc(obj.x, obj.y, spawnImg.width / 3, 0, Math.PI * 2);
+        ctx.strokeStyle = 'red';
+        ctx.lineWidth = 2;
+        ctx.stroke();
+        ctx.closePath();
+        ctx.restore();
+    });
+
+    // Draw the truck image
     if (truck.img.complete) {
         ctx.save();
         ctx.translate(truck.x, truck.y);
@@ -62,6 +178,8 @@ function draw() {
         );
         ctx.restore();
     }
+    if (emptyBucket) player.img.src = 'img/EmptyBucketSprite-Photoroom.png';
+    else player.img.src = 'img/FullBucketSprite-Photoroom.png';
 
     if (player.img.complete) {
         ctx.save();
@@ -76,6 +194,9 @@ function draw() {
         );
         ctx.restore();
     }
+    // Clamp player position to stay within canvas borders
+    player.x = Math.max(player.radius, Math.min(canvas.width - player.radius, player.x));
+    player.y = Math.max(player.radius, Math.min(canvas.height - player.radius, player.y));
 }
 
 function movePlayer(dx, dy) {
