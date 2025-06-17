@@ -12,9 +12,12 @@ let village_Bar_Outline_Width = village_water_width + village_water_height / 2;
 let bar_distance_from_village = 80;
 let offsetX = (village_Bar_Outline_Width - village_water_width) / 2;
 let offsetY = village_water_height / 4;
+village_drain_speed = 1.5;
 
 let refillSpeed = 0.7; //the speed in which players bucket will refill
-let drainSpeed = 0.7; //the speed in which players bucket will drain
+let drainSpeed = 1.75; //the speed in which players bucket will drain
+
+let keydown = false;
 
 const WATER_MAX = 100;
 
@@ -32,7 +35,7 @@ let player = {
         const rectWidth = 150;
         const rectHeight = 300;
         ctx.save();
-        ctx.strokeStyle = 'red';
+        ctx.strokeStyle = 'transparent'; // was 'red'
         ctx.strokeRect(
             canvas.width - canvas.width / 11,
             canvas.height - canvas.height / 3.3,
@@ -45,7 +48,7 @@ let player = {
         ctx.save();
         ctx.beginPath();
         ctx.arc(this.x, this.y, 36, 0, Math.PI * 2); // (centerX, centerY, radius, startAngle, endAngle)
-        ctx.strokeStyle = 'red'; // Change color as needed
+        ctx.strokeStyle = 'transparent'; // was 'red'
         ctx.stroke();
         ctx.closePath();
         ctx.restore();
@@ -61,6 +64,22 @@ let player = {
                 this.radius * 3,
                 this.radius * 2.5
             );
+
+            // Draw the blue circle relative to the player's rotation
+            ctx.save();
+            ctx.beginPath();
+            ctx.arc(0, -27, 13, 0, Math.PI * 2);
+            // Change color based on WATER_BAR_WIDTH
+            if (WATER_BAR_WIDTH > 0) {
+                ctx.fillStyle = 'rgb(37, 109, 157)';
+            } else {
+                ctx.fillStyle = 'rgba(0,0,0,0)'; // transparent
+            }
+            ctx.fill();
+            ctx.lineWidth = 3;
+            ctx.closePath();
+            ctx.restore();
+
             ctx.restore();
         }
 
@@ -109,9 +128,11 @@ let imagesLoaded = 0;
 let villageSpawnAmount = 3; // Amount of villages spawned on screen
 const spawnImgSrc = 'img/house-village-city-atl-png.webp';
 
+// Track each village's water bar width
+let villageBars = []; // [{x, y, width}]
+
 //Village Water Bar
-function addVillageWaterBar(x, y) {
-    
+function addVillageWaterBar(x, y, width) {
     // Draw outline (black)
     ctx.fillStyle = 'black';
     ctx.fillRect(
@@ -126,7 +147,7 @@ function addVillageWaterBar(x, y) {
     ctx.fillRect(
         x - spawnImg.width / 2.5 + offsetX, //bookmark code: 90063
         y + bar_distance_from_village + offsetY,
-        village_water_width,
+        width,
         village_water_height
     );
 }
@@ -200,10 +221,24 @@ function spawnRandomImages(amount) {
 }
 
 let randomImages = [];
-let villageBars = [];
 spawnImg.onload = function () {
     randomImages = spawnRandomImages(villageSpawnAmount);
+    // Initialize each village's blue bar width
+    villageBars = randomImages.map(obj => ({
+        x: obj.x,
+        y: obj.y,
+        width: village_water_width
+    }));
     draw(); // Redraw after images are spawned
+
+    // Start timer to decrease all village bars every second
+    setInterval(() => {
+        villageBars.forEach(bar => {
+            if(bar.width > 0) {
+                bar.width = Math.max(0, bar.width - village_drain_speed / 100);
+            }
+        });
+    }, 1);
 };
 
 player.img.onload = truck.img.onload = function () {
@@ -228,7 +263,8 @@ function draw() {
         });
     }
 
-    randomImages.forEach(obj => {
+    // Draw each village and its blue bar using the tracked width
+    randomImages.forEach((obj, idx) => {
         // Draw the image
         ctx.drawImage(
             spawnImg,
@@ -236,19 +272,18 @@ function draw() {
             obj.y - spawnImg.height / 2
         );
 
-
-
         // Draw the collision circle for the villages
         ctx.save();
         ctx.beginPath();
         ctx.arc(obj.x, obj.y, spawnImg.width / 3, 0, Math.PI * 2);
-        ctx.strokeStyle = 'red';
+        ctx.strokeStyle = 'transparent'; // was 'red'
         ctx.lineWidth = 2;
         ctx.stroke();
         ctx.closePath();
         ctx.restore();
 
-        addVillageWaterBar(obj.x,obj.y);
+        // Draw the blue bar with the current width
+        addVillageWaterBar(obj.x, obj.y, villageBars[idx]?.width ?? village_water_width);
     });
 
     // Draw the truck image
@@ -286,10 +321,12 @@ const keys = {};
 
 document.addEventListener('keydown', (e) => {
     keys[e.key.toLowerCase()] = true;
+    keydown = true;
 });
 
 document.addEventListener('keyup', (e) => {
     keys[e.key.toLowerCase()] = false;
+    keydown = false;
 });
 
 function CollisionCheck() {
@@ -315,9 +352,10 @@ function CollisionCheck() {
     const dy = playerCircle.y - closestY;
     const distanceSq = dx * dx + dy * dy;
 
-    if (distanceSq <= playerCircle.r * playerCircle.r && WATER_BAR_WIDTH < WATER_MAX) {
+    if (distanceSq <= playerCircle.r * playerCircle.r && WATER_BAR_WIDTH < WATER_MAX && !keydown) {
         console.log("player touching truck");
         WATER_BAR_WIDTH += refillSpeed;
+
     }
 
     // Check collision with each village's red collision circle
@@ -327,9 +365,13 @@ function CollisionCheck() {
             const dx = playerCircle.x - village.x;
             const dy = playerCircle.y - village.y;
             const distSq = dx * dx + dy * dy;
-            if (distSq <= (playerCircle.r + villageRadius) * (playerCircle.r + villageRadius) && WATER_BAR_WIDTH > 0) {
+            if (distSq <= (playerCircle.r + villageRadius) * (playerCircle.r + villageRadius) && WATER_BAR_WIDTH > 0 && !keydown && WATER_BAR_WIDTH > 0 && villageBars[idx].width < village_water_width) {
                 console.log(`player touching a village (index: ${idx})`);
                 WATER_BAR_WIDTH -= drainSpeed;
+                // Decrease the blue bar width for this village
+                if (villageBars[idx]) {
+                    villageBars[idx].width = Math.max(0, villageBars[idx].width + 1); // adjust decrement as needed
+                }
             }
         });
     }
@@ -369,6 +411,7 @@ function update() {
     // Always redraw and check for collision, even if not moving
     draw();
     CollisionCheck();
+    console.log("keydown: ", keydown);
 
     requestAnimationFrame(update);
 }
