@@ -5,6 +5,14 @@ let WATER_BAR_WIDTH = 0;
 const WATER_BAR_HEIGHT = 10;
 let WATER_BAR_OUTLINE_WIDTH = 110; // Outline width (separate from bar width)
 let WATER_BAR_OUTLINE = 3; // Outline thickness
+
+let village_water_height = 10;
+let village_water_width = 150; //if changed, ctrl-f 90063 to adjust bars center point
+let village_Bar_Outline_Width = village_water_width + village_water_height / 2;
+let bar_distance_from_village = 80;
+let offsetX = (village_Bar_Outline_Width - village_water_width) / 2;
+let offsetY = village_water_height / 4;
+
 let refillSpeed = 0.7; //the speed in which players bucket will refill
 let drainSpeed = 0.7; //the speed in which players bucket will drain
 
@@ -101,6 +109,28 @@ let imagesLoaded = 0;
 let villageSpawnAmount = 3; // Amount of villages spawned on screen
 const spawnImgSrc = 'img/house-village-city-atl-png.webp';
 
+//Village Water Bar
+function addVillageWaterBar(x, y) {
+    
+    // Draw outline (black)
+    ctx.fillStyle = 'black';
+    ctx.fillRect(
+        x - spawnImg.width / 2.5, //bookmark code: 90063
+        y + bar_distance_from_village,
+        village_Bar_Outline_Width,
+        village_water_height * 1.5
+    );
+
+    // Draw water (light blue)
+    ctx.fillStyle = '#7ed6ff';
+    ctx.fillRect(
+        x - spawnImg.width / 2.5 + offsetX, //bookmark code: 90063
+        y + bar_distance_from_village + offsetY,
+        village_water_width,
+        village_water_height
+    );
+}
+
 const spawnImg = new Image();
 spawnImg.src = spawnImgSrc;
 
@@ -170,6 +200,7 @@ function spawnRandomImages(amount) {
 }
 
 let randomImages = [];
+let villageBars = [];
 spawnImg.onload = function () {
     randomImages = spawnRandomImages(villageSpawnAmount);
     draw(); // Redraw after images are spawned
@@ -205,6 +236,8 @@ function draw() {
             obj.y - spawnImg.height / 2
         );
 
+
+
         // Draw the collision circle for the villages
         ctx.save();
         ctx.beginPath();
@@ -214,6 +247,8 @@ function draw() {
         ctx.stroke();
         ctx.closePath();
         ctx.restore();
+
+        addVillageWaterBar(obj.x,obj.y);
     });
 
     // Draw the truck image
