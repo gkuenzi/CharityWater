@@ -11,10 +11,113 @@ body {
 }
 
 #gameCanvas {
-    background:url(img/Overhead-RoyaltyFree-Desert-Environment.jpg);
-    border: #fff9e9 8px solid;
+    background:url(img/NewUpdatedBackground.png);
+    border: #000000 8px solid;
     border-radius: 15px;
     background-size: 150% 150%; /* makes the image 20% larger */
     background-size: cover;
     background-repeat: no-repeat;
+}
+
+#startScreenContainer {
+  color: white;
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  background: rgba(3, 141, 166, 0.8);
+  padding: 32px 30px;
+  border-radius: 16px;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.15);
+  z-index: 1000;
+}
+
+/* Use a bold, geometric, video-game style font */
+@import url('https://fonts.googleapis.com/css2?family=Press+Start+2P&display=swap');
+/* Import Tribeca font from Google Fonts if available, otherwise fallback to Arial */
+@import url('https://fonts.googleapis.com/css2?family=Tribeca:wght@700&display=swap');
+
+/* Add Tribeca font using @font-face */
+@font-face {
+  font-family: 'Tribeca';
+  src: url('Tribeca.ttf') format('truetype');
+  font-weight: normal;
+  font-style: normal;
+  font-display: block;
+}
+
+/* Force Tribeca font on start screen container and children */
+#startScreenContainer,
+#startScreenContainer * {
+  font-family: 'Tribeca', Arial, sans-serif !important;
+}
+
+#startScreenContainer .title {
+  font-family: 'Tribeca', Arial, sans-serif;
+  font-size: 2.5rem;
+  margin-bottom: 24px;
+  text-align: center;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 #3b2e13, 0 2px 8px #00000055;
+}
+
+#startScreenContainer button {
+  font-family: 'Tribeca', Arial, sans-serif;
+  font-size: 1.5rem;
+  padding: 12px 36px;
+  border-radius: 8px;
+  border: none;
+  background: rgb(0, 0, 0);
+  color: rgb(255, 201, 7);
+  cursor: pointer;
+  box-shadow: 0 2px 8px rgba(52,152,219,0.15);
+  transition: background 0.2s;
+  letter-spacing: 1px;
+  text-shadow: 1px 1px 0 #1a3c4a;
+}
+
+#startScreenContainer button:hover {
+  background: rgb(215, 170, 6);
+}
+
+#gameOverContainer {
+  position: absolute;
+  top: 40%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: rgba(0,0,0,0.85);
+  color: #fff;
+  padding: 40px 80px;
+  border-radius: 18px;
+  text-align: center;
+  font-size: 2.5rem;
+  font-family: 'Tribeca', Arial, sans-serif;
+  box-shadow: 0 4px 24px rgba(0,0,0,0.18);
+  z-index: 2000;
+}
+
+#charityWaterBox {
+  position: absolute;
+  top: 55%;
+  left: 50%;
+  transform: translate(-50%, 0);
+  background: rgba(3, 141, 166, 0.92);
+  color: #fff;
+  padding: 24px 36px;
+  border-radius: 14px;
+  text-align: center;
+  font-size: 1.3rem;
+  font-family: 'Tribeca', Arial, sans-serif;
+  box-shadow: 0 2px 12px rgba(0,0,0,0.13);
+  z-index: 2001;
+}
+
+#charityWaterBox a {
+  color: #ffd700;
+  text-decoration: underline;
+  font-weight: bold;
 }
