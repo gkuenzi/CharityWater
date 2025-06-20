@@ -4,13 +4,14 @@ const ctx = canvas.getContext('2d');
 let lvl = 0; // 0 == start screen, -1 == game over
 let loadingScreen = false; //Determines if a loading screen is active or not
 let fact = 0;
+let factDisplayed = false;
 const charityFacts = [
     'Eight out of ten people without access to improved water sources live in rural areas.',
     'charity: water works with local partners to fund water, sanitation, and hygiene (WASH) programs for rural communities around the world.',
     'water projects are locally-led and community-owned. Charity: water deploys donations to the field, where these partners go to work rehabilitating old water systems, building new ones, or completing sanitation and hygiene training.',
     'When you give to charity: water, 100% of your donation goes directly to funding water solutions in rural communities.',
     'Access to clean water and basic sanitation can save around 16,000 lives every week.',
-    '703 million people in the world live without clean water. That’s nearly 1 in 10 people worldwide. Or, twice the population of the United States.',
+    '703 million people in the world live without clean water. Thats nearly 1 in 10 people worldwide. Or, twice the population of the United States.',
     'Diseases from dirty water kill more people every year than all forms of violence, including war.',
     'Access to clean water gives communities more time to grow food, earn an income, and go to school -- all of which fight poverty.',
     'Every $1 invested in joint water supply and sanitation provides a $4.30 economic return.'
@@ -38,7 +39,7 @@ let keydown = false;
 const WATER_MAX = 100;
 
 // Timer variables
-let timerSeconds = 15; // 90 == 1.5 minutes
+let timerSeconds = 5; // 90 == 1.5 minutes
 let timerInterval = null;
 let timeDepletionRate = 1;
 
@@ -163,7 +164,7 @@ function startGame() {
             img: new Image()
         };
         truck.img.src = 'img/Water-truck-Photoroom.png';
-        
+
         player.img.src = 'img/EmptyBucketSprite-Photoroom.png';
 
         let imagesLoaded = 0;
@@ -286,18 +287,20 @@ function startGame() {
             const maxDist = Math.max(...distances);
 
             // Start timer to decrease all village bars every second
-            setInterval(() => {
-                villageBars.forEach(bar => {
-                    if (bar.width > 0) {
-                        // Normalize distance (0 = closest, 1 = farthest)
-                        let norm = (bar.distanceToTruck - minDist) / (maxDist - minDist || 1);
-                        // Invert so farther = slower drain
-                        let speedFactor = 1 - norm * 0.5; // up to 50% slower for farthest
-                        let drain = (village_drain_speed / 100) * speedFactor;
-                        bar.width = Math.max(0, bar.width - drain);
-                    }
-                });
-            }, 1);
+            if (!loadingScreen) {
+                setInterval(() => {
+                    villageBars.forEach(bar => {
+                        if (bar.width > 0) {
+                            // Normalize distance (0 = closest, 1 = farthest)
+                            let norm = (bar.distanceToTruck - minDist) / (maxDist - minDist || 1);
+                            // Invert so farther = slower drain
+                            let speedFactor = 1 - norm * 0.5; // up to 50% slower for farthest
+                            let drain = (village_drain_speed / 100) * speedFactor;
+                            bar.width = Math.max(0, bar.width - drain);
+                        }
+                    });
+                }, 1);
+            }
         };
 
         player.img.onload = truck.img.onload = function () {
@@ -412,7 +415,6 @@ function startGame() {
             const distanceSq = dx * dx + dy * dy;
 
             if (distanceSq <= playerCircle.r * playerCircle.r && WATER_BAR_WIDTH < WATER_MAX && !keydown) {
-                console.log("player touching truck");
                 WATER_BAR_WIDTH += refillSpeed;
 
             }
@@ -425,7 +427,6 @@ function startGame() {
                     const dy = playerCircle.y - village.y;
                     const distSq = dx * dx + dy * dy;
                     if (distSq <= (playerCircle.r + villageRadius) * (playerCircle.r + villageRadius) && WATER_BAR_WIDTH >= 0 && !keydown && WATER_BAR_WIDTH > 0 && villageBars[idx].width < village_water_width) {
-                        console.log(`player touching a village (index: ${idx})`);
                         WATER_BAR_WIDTH -= drainSpeed;
                         // Decrease the blue bar width for this village
                         if (villageBars[idx]) {
@@ -470,7 +471,6 @@ function startGame() {
             // Always redraw and check for collision, even if not moving
             draw();
             CollisionCheck();
-            console.log("keydown: ", keydown);
 
             // Check for game over: any village water bar <= 0
             if (villageBars.some(bar => bar.width <= 0)) {
@@ -479,11 +479,14 @@ function startGame() {
                 return;
             }
 
-            if (timerSeconds <= 0) {
+            // Show loading screen when timer ends
+            if (timerSeconds <= 0 && !loadingScreen) {
                 loadingScreen = true;
-                lvl++;
-                lvlStats();
-                startGame();
+                factDisplayed = false; // reset for new fact
+                setTimeout(() => {
+                    startGame();
+                }, 0);
+                return;
             }
 
             requestAnimationFrame(update);
@@ -564,37 +567,55 @@ function startGame() {
         let existingNextBtn = document.getElementById('nextLevelBtn');
         if (existingNextBtn) existingNextBtn.remove();
 
+        // Remove all game-related DOM elements except the loading screen and button
+        let idsToRemove = [
+            'startScreenContainer',
+            'gameOverContainer',
+            'charityWaterBox'
+        ];
+        idsToRemove.forEach(id => {
+            let el = document.getElementById(id);
+            if (el) el.remove();
+        });
 
+        // Do NOT define or draw player, truck, or villages while loadingScreen is true
 
         // Create loading screen container styled like start screen container, but no start button
-        const loadingContainer = document.createElement('div');
-        loadingContainer.id = 'loadingScreenContainer';
+        // Use setTimeout to ensure DOM is ready and button is clickable immediately
+        setTimeout(() => {
+            const loadingContainer = document.createElement('div');
+            loadingContainer.id = 'loadingScreenContainer';
 
-        // Add a title or loading message
-        const loadingTitle = document.createElement('div');
-        loadingTitle.className = 'title';
-        fact = Math.floor(Math.random() * charityFacts.length); //generates a random fact
-        loadingTitle.innerText = charityFacts[fact];
-        loadingContainer.appendChild(loadingTitle);
+            // Add a title or loading message
+            const loadingTitle = document.createElement('div');
+            loadingTitle.className = 'title';
+            if (!factDisplayed) {
+                fact = Math.floor(Math.random() * charityFacts.length);
+                factDisplayed = true;
+            }
+            loadingTitle.innerText = charityFacts[fact];
+            loadingContainer.appendChild(loadingTitle);
 
-        document.body.appendChild(loadingContainer);
+            document.body.appendChild(loadingContainer);
 
-        // Add "next level" button positioned over the canvas, not inside loadingScreenContainer
-        let nextLevelBtn = document.createElement('button');
-        nextLevelBtn.id = 'nextLevelBtn';
-        nextLevelBtn.innerText = 'next level';
-        nextLevelBtn.onclick = function () {
-            loadingScreen = false;
-            lvl++;
-            lvlStats();
-            // Remove loading screen and button
-            loadingContainer.remove();
-            nextLevelBtn.remove();
-            startGame();
-        };
-
-        document.body.appendChild(nextLevelBtn);
-    } else {
+            // Add "next level" button positioned over the canvas, not inside loadingScreenContainer
+            let nextLevelBtn = document.createElement('button');
+            nextLevelBtn.id = 'nextLevelBtn';
+            nextLevelBtn.innerText = 'next level';
+            nextLevelBtn.onclick = function () {
+                loadingScreen = false;
+                factDisplayed = false;
+                lvl++; // advance to next level
+                // Reset timer for next level (adjust as needed)
+                timerSeconds = 90; // or whatever value you want for each level
+                // Remove loading screen and button
+                loadingContainer.remove();
+                nextLevelBtn.remove();
+                startGame();
+            };
+            document.body.appendChild(nextLevelBtn);
+        }, 0);
+    } else if (lvl < 0 && !loadingScreen) {
         // Game Over screen
         // Remove any existing game over containers
         let existingGameOver = document.getElementById('gameOverContainer');
@@ -618,10 +639,13 @@ function startGame() {
 };
 
 function lvlStats() {
+    // Only update player properties if player is defined
     if (lvl == 2) {
         villageSpawnAmount = 4;
     } else if (lvl == 3) {
-        player.speed = 6;
+        if (typeof player !== "undefined") {
+            player.speed = 6;
+        }
         village_drain_speed = 1.5;
         drainSpeed = 1.5;
     }
