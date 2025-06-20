@@ -29,7 +29,7 @@ let village_Bar_Outline_Width = village_water_width + village_water_height / 2;
 let bar_distance_from_village = 80;
 let offsetX = (village_Bar_Outline_Width - village_water_width) / 2;
 let offsetY = village_water_height / 4;
-village_drain_speed = 1; //intial: 1
+village_drain_speed = 3; //intial: 2
 
 let refillSpeed = 0.7; //the speed in which players bucket will refill (initial: 0.7)
 let drainSpeed = 1.75; //the speed in which players bucket will drain (initial: 1.75)
@@ -39,7 +39,8 @@ let keydown = false;
 const WATER_MAX = 100;
 
 // Timer variables
-let timerSeconds = 5; // 90 == 1.5 minutes
+let MaxSeconds = 60; // (initial: 60 (1 minute))
+let timerSeconds = MaxSeconds;
 let timerInterval = null;
 let timeDepletionRate = 1;
 
@@ -47,22 +48,51 @@ let timeDepletionRate = 1;
 function startTimer() {
     // Clear any existing timer
     if (timerInterval) clearInterval(timerInterval);
-
+    updateTimerDisplay(true);
     timerInterval = setInterval(() => {
         if (timerSeconds > 0) {
             timerSeconds -= timeDepletionRate;
-            // Optionally, update a timer display here
-            // Example: updateTimerDisplay();
+            updateTimerDisplay(true);
         } else {
             clearInterval(timerInterval);
+            updateTimerDisplay(false);
             // Optionally, handle timer end (e.g., end game)
         }
     }, 1000);
 }
 
+// Function to update or remove the timer display above the canvas
+function updateTimerDisplay(running) {
+    let timerDiv = document.getElementById('timerDisplay');
+    if (!running) {
+        if (timerDiv) timerDiv.remove();
+        return;
+    }
+    if (!timerDiv) {
+        timerDiv = document.createElement('div');
+        timerDiv.id = 'timerDisplay';
+        timerDiv.style.position = 'absolute';
+        timerDiv.style.top = '24px';
+        timerDiv.style.left = '50%';
+        timerDiv.style.transform = 'translateX(-50%)';
+        timerDiv.style.fontFamily = "'Tribeca', Arial, sans-serif";
+        timerDiv.style.fontSize = '2.2rem';
+        timerDiv.style.color = '#111';
+        timerDiv.style.background = 'rgba(255,255,255,0.85)';
+        timerDiv.style.padding = '8px 32px';
+        timerDiv.style.borderRadius = '12px';
+        timerDiv.style.zIndex = '3000';
+        timerDiv.style.textAlign = 'center';
+        document.body.appendChild(timerDiv);
+    }
+    timerDiv.innerText = `Time: ${Math.max(0, Math.ceil(timerSeconds))}`;
+}
+
 function startGame() {
+    console.log("startGame() has been run");
 
     if (lvl > 0 && !loadingScreen) {
+        updateTimerDisplay(true);
         startTimer();
 
         let player = {
@@ -566,6 +596,8 @@ function startGame() {
         if (existingLoading) existingLoading.remove();
         let existingNextBtn = document.getElementById('nextLevelBtn');
         if (existingNextBtn) existingNextBtn.remove();
+        let existingDayComplete = document.getElementById('dayCompleteText');
+        if (existingDayComplete) existingDayComplete.remove();
 
         // Remove all game-related DOM elements except the loading screen and button
         let idsToRemove = [
@@ -581,10 +613,24 @@ function startGame() {
         // Do NOT define or draw player, truck, or villages while loadingScreen is true
 
         // Create loading screen container styled like start screen container, but no start button
-        // Use setTimeout to ensure DOM is ready and button is clickable immediately
         setTimeout(() => {
             const loadingContainer = document.createElement('div');
             loadingContainer.id = 'loadingScreenContainer';
+            loadingContainer.style.position = 'absolute';
+            loadingContainer.style.top = '50%';
+            loadingContainer.style.left = '50%';
+            loadingContainer.style.transform = 'translate(-50%, -50%)';
+            loadingContainer.style.display = 'flex';
+            loadingContainer.style.flexDirection = 'column';
+            loadingContainer.style.alignItems = 'center';
+            loadingContainer.style.background = 'rgba(3, 141, 166, 0.8)';
+            loadingContainer.style.padding = '32px 30px';
+            loadingContainer.style.borderRadius = '16px';
+            loadingContainer.style.boxShadow = '0 4px 24px rgba(0,0,0,0.15)';
+            loadingContainer.style.zIndex = '1000';
+            loadingContainer.style.color = 'white';
+            loadingContainer.style.fontFamily = "'Tribeca', Arial, sans-serif";
+            loadingContainer.style.textAlign = 'center';
 
             // Add a title or loading message
             const loadingTitle = document.createElement('div');
@@ -598,22 +644,66 @@ function startGame() {
 
             document.body.appendChild(loadingContainer);
 
-            // Add "next level" button positioned over the canvas, not inside loadingScreenContainer
-            let nextLevelBtn = document.createElement('button');
-            nextLevelBtn.id = 'nextLevelBtn';
-            nextLevelBtn.innerText = 'next level';
-            nextLevelBtn.onclick = function () {
-                loadingScreen = false;
-                factDisplayed = false;
-                lvl++; // advance to next level
-                // Reset timer for next level (adjust as needed)
-                timerSeconds = 90; // or whatever value you want for each level
-                // Remove loading screen and button
-                loadingContainer.remove();
-                nextLevelBtn.remove();
-                startGame();
-            };
-            document.body.appendChild(nextLevelBtn);
+            // After loadingContainer is in the DOM, position 'Day complete!' and the button
+            setTimeout(() => {
+                const rect = loadingContainer.getBoundingClientRect();
+                // Day complete text
+                let dayComplete = document.createElement('div');
+                dayComplete.id = 'dayCompleteText';
+                dayComplete.innerText = 'Day ' + lvl + ' complete!';
+                dayComplete.style.position = 'absolute';
+                dayComplete.style.left = '50%';
+                dayComplete.style.transform = 'translateX(-50%)';
+                dayComplete.style.top = (rect.top - 60) + 'px'; // 60px above fact container
+                dayComplete.style.fontFamily = "'Tribeca', Arial, sans-serif";
+                dayComplete.style.fontSize = '2.5rem';
+                dayComplete.style.color = '#111';
+                dayComplete.style.textAlign = 'center';
+                dayComplete.style.zIndex = '2001';
+                document.body.appendChild(dayComplete);
+
+                // Next level button
+                let nextLevelBtn = document.createElement('button');
+                nextLevelBtn.id = 'nextLevelBtn';
+                nextLevelBtn.innerText = 'next day';
+                nextLevelBtn.style.position = 'absolute';
+                nextLevelBtn.style.left = '50%';
+                nextLevelBtn.style.transform = 'translateX(-50%)';
+                nextLevelBtn.style.top = (rect.bottom + 40) + 'px'; // 40px below fact container
+                nextLevelBtn.style.fontFamily = "'Tribeca', Arial, sans-serif";
+                nextLevelBtn.style.fontSize = '1.5rem';
+                nextLevelBtn.style.padding = '12px 36px';
+                nextLevelBtn.style.borderRadius = '8px';
+                nextLevelBtn.style.border = 'none';
+                nextLevelBtn.style.background = 'rgb(0, 0, 0)';
+                nextLevelBtn.style.color = 'rgb(255, 201, 7)';
+                nextLevelBtn.style.cursor = 'pointer';
+                nextLevelBtn.style.boxShadow = '0 2px 8px rgba(52,152,219,0.15)';
+                nextLevelBtn.style.transition = 'background 0.2s';
+                nextLevelBtn.style.letterSpacing = '1px';
+                nextLevelBtn.style.textShadow = '1px 1px 0 #1a3c4a';
+                nextLevelBtn.style.zIndex = '2001';
+                nextLevelBtn.onmouseover = function () {
+                    nextLevelBtn.style.background = 'rgb(215, 170, 6)';
+                };
+                nextLevelBtn.onmouseout = function () {
+                    nextLevelBtn.style.background = 'rgb(0, 0, 0)';
+                };
+                nextLevelBtn.onclick = function () {
+                    loadingScreen = false;
+                    factDisplayed = false;
+                    WATER_BAR_WIDTH = 0;
+                    lvl++; // advance to next level
+                    lvlStats(); //adjust stats for the new level
+                    timerSeconds = MaxSeconds; // or whatever value you want for each level
+                    // Remove loading screen and button
+                    loadingContainer.remove();
+                    nextLevelBtn.remove();
+                    dayComplete.remove();
+                    startGame();
+                };
+                document.body.appendChild(nextLevelBtn);
+            }, 0);
         }, 0);
     } else if (lvl < 0 && !loadingScreen) {
         // Game Over screen
@@ -641,15 +731,29 @@ function startGame() {
 function lvlStats() {
     // Only update player properties if player is defined
     if (lvl == 2) {
-        villageSpawnAmount = 4;
+        village_drain_speed = 3.5; //Increase speed villages will drain
+
     } else if (lvl == 3) {
-        if (typeof player !== "undefined") {
-            player.speed = 6;
-        }
-        village_drain_speed = 1.5;
-        drainSpeed = 1.5;
+        villageSpawnAmount = 4; //Add a village
+        drainSpeed = 1.6; //Player Buff (increases bucket size)
+    } else if (lvl == 4) {
+        if (typeof player !== "undefined") player.speed = 6; //Player Buff (player speed increased)
+        village_drain_speed = 3.7; //Increase speed villages will drain
+    } else if (lvl == 5) {
+        villageSpawnAmount = 5; //Add a village
+        if (typeof player !== "undefined") player.speed = 6.5; //Player Buff (player speed increased)
+        drainSpeed = 1.7; //Player Nerf (increases bucket size by decreasing drain speed)
+    } else if (lvl == 6) {
+        if (typeof player !== "undefined") player.speed = 7.5; //Player Buff (player speed increased)
+        villageSpawnAmount = 6; //Add a village
+        village_drain_speed = 3.4; //Decrease speed villages will drain
+    } else if (lvl == 7) {
+        villageSpawnAmount = 7; //Add a village
+        drainSpeed = 1.2; //Player Buff (increases bucket size by decreasing drain speed)
+        if (typeof player !== "undefined") player.speed = 8; //Player Buff (player speed increased)
     }
+    console.log("level stats adjusted for day ", lvl);
 }
 
-lvlStats();
+lvlStats(); //only used for testing -- not required for actual game
 startGame();
