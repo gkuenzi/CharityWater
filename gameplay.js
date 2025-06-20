@@ -2,6 +2,7 @@ const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
 let lvl = 0; // 0 == start screen, -1 == game over
+let score = 0;
 let loadingScreen = false; //Determines if a loading screen is active or not
 let fact = 0;
 let factDisplayed = false;
@@ -77,8 +78,8 @@ function updateTimerDisplay(running) {
         timerDiv.style.transform = 'translateX(-50%)';
         timerDiv.style.fontFamily = "'Tribeca', Arial, sans-serif";
         timerDiv.style.fontSize = '2.2rem';
-        timerDiv.style.color = '#111';
-        timerDiv.style.background = 'rgba(255,255,255,0.85)';
+        timerDiv.style.color = 'rgba(255, 214, 7, 0.85)';
+        timerDiv.style.background = 'rgba(0, 0, 0, 0.85)';
         timerDiv.style.padding = '8px 32px';
         timerDiv.style.borderRadius = '12px';
         timerDiv.style.zIndex = '3000';
@@ -88,10 +89,48 @@ function updateTimerDisplay(running) {
     timerDiv.innerText = `Time: ${Math.max(0, Math.ceil(timerSeconds))}`;
 }
 
+function updateDayCounter() {
+    let dayDiv = document.getElementById('dayCounter');
+    if (!dayDiv) {
+        dayDiv = document.createElement('div');
+        dayDiv.id = 'dayCounter';
+        // Insert after canvas
+        const canvasElem = document.getElementById('gameCanvas');
+        canvasElem.parentNode.insertBefore(dayDiv, canvasElem.nextSibling);
+    }
+    // Only show on active levels
+    if (lvl > 0 && !loadingScreen && lvl < 1000) {
+        dayDiv.style.display = '';
+        dayDiv.innerText = `Day: ${lvl}`;
+    } else {
+        dayDiv.style.display = 'none';
+    }
+}
+
+function updateScoreCounter() {
+    let scoreDiv = document.getElementById('scoreCounter');
+    if (!scoreDiv) {
+        scoreDiv = document.createElement('div');
+        scoreDiv.id = 'scoreCounter';
+        // Insert after canvas
+        const canvasElem = document.getElementById('gameCanvas');
+        canvasElem.parentNode.insertBefore(scoreDiv, canvasElem.nextSibling);
+    }
+    // Only show on active levels
+    if (lvl > 0 && !loadingScreen && lvl < 1000) {
+        scoreDiv.style.display = '';
+        scoreDiv.innerText = `Score: ${score}`;
+    } else {
+        scoreDiv.style.display = 'none';
+    }
+}
+
 function startGame() {
     console.log("startGame() has been run");
 
     if (lvl > 0 && !loadingScreen) {
+        updateDayCounter();
+        updateScoreCounter();
         updateTimerDisplay(true);
         startTimer();
 
@@ -462,6 +501,9 @@ function startGame() {
                         if (villageBars[idx]) {
                             villageBars[idx].width = Math.max(0, villageBars[idx].width + 1); // adjust decrement as needed
                         }
+                        score++;
+                        updateScoreCounter();
+                        console.log("score: ", score);
                     }
                 });
             }
@@ -616,23 +658,14 @@ function startGame() {
         setTimeout(() => {
             const loadingContainer = document.createElement('div');
             loadingContainer.id = 'loadingScreenContainer';
-            loadingContainer.style.position = 'absolute';
-            loadingContainer.style.top = '50%';
-            loadingContainer.style.left = '50%';
-            loadingContainer.style.transform = 'translate(-50%, -50%)';
-            loadingContainer.style.display = 'flex';
-            loadingContainer.style.flexDirection = 'column';
-            loadingContainer.style.alignItems = 'center';
-            loadingContainer.style.background = 'rgba(3, 141, 166, 0.8)';
-            loadingContainer.style.padding = '32px 30px';
-            loadingContainer.style.borderRadius = '16px';
-            loadingContainer.style.boxShadow = '0 4px 24px rgba(0,0,0,0.15)';
-            loadingContainer.style.zIndex = '1000';
-            loadingContainer.style.color = 'white';
-            loadingContainer.style.fontFamily = "'Tribeca', Arial, sans-serif";
-            loadingContainer.style.textAlign = 'center';
 
-            // Add a title or loading message
+            // Day complete text
+            let dayComplete = document.createElement('div');
+            dayComplete.id = 'dayCompleteText';
+            dayComplete.innerText = 'Day ' + lvl + ' complete!';
+            loadingContainer.appendChild(dayComplete);
+
+            // Fact container
             const loadingTitle = document.createElement('div');
             loadingTitle.className = 'title';
             if (!factDisplayed) {
@@ -642,68 +675,30 @@ function startGame() {
             loadingTitle.innerText = charityFacts[fact];
             loadingContainer.appendChild(loadingTitle);
 
-            document.body.appendChild(loadingContainer);
-
-            // After loadingContainer is in the DOM, position 'Day complete!' and the button
-            setTimeout(() => {
-                const rect = loadingContainer.getBoundingClientRect();
-                // Day complete text
-                let dayComplete = document.createElement('div');
-                dayComplete.id = 'dayCompleteText';
-                dayComplete.innerText = 'Day ' + lvl + ' complete!';
-                dayComplete.style.position = 'absolute';
-                dayComplete.style.left = '50%';
-                dayComplete.style.transform = 'translateX(-50%)';
-                dayComplete.style.top = (rect.top - 60) + 'px'; // 60px above fact container
-                dayComplete.style.fontFamily = "'Tribeca', Arial, sans-serif";
-                dayComplete.style.fontSize = '2.5rem';
-                dayComplete.style.color = '#111';
-                dayComplete.style.textAlign = 'center';
-                dayComplete.style.zIndex = '2001';
-                document.body.appendChild(dayComplete);
-
-                // Next level button
-                let nextLevelBtn = document.createElement('button');
-                nextLevelBtn.id = 'nextLevelBtn';
-                nextLevelBtn.innerText = 'next day';
-                nextLevelBtn.style.position = 'absolute';
-                nextLevelBtn.style.left = '50%';
-                nextLevelBtn.style.transform = 'translateX(-50%)';
-                nextLevelBtn.style.top = (rect.bottom + 40) + 'px'; // 40px below fact container
-                nextLevelBtn.style.fontFamily = "'Tribeca', Arial, sans-serif";
-                nextLevelBtn.style.fontSize = '1.5rem';
-                nextLevelBtn.style.padding = '12px 36px';
-                nextLevelBtn.style.borderRadius = '8px';
-                nextLevelBtn.style.border = 'none';
+            // Next level button
+            let nextLevelBtn = document.createElement('button');
+            nextLevelBtn.id = 'nextLevelBtn';
+            nextLevelBtn.innerText = 'next day';
+            nextLevelBtn.onmouseover = function () {
+                nextLevelBtn.style.background = 'rgb(215, 170, 6)';
+            };
+            nextLevelBtn.onmouseout = function () {
                 nextLevelBtn.style.background = 'rgb(0, 0, 0)';
-                nextLevelBtn.style.color = 'rgb(255, 201, 7)';
-                nextLevelBtn.style.cursor = 'pointer';
-                nextLevelBtn.style.boxShadow = '0 2px 8px rgba(52,152,219,0.15)';
-                nextLevelBtn.style.transition = 'background 0.2s';
-                nextLevelBtn.style.letterSpacing = '1px';
-                nextLevelBtn.style.textShadow = '1px 1px 0 #1a3c4a';
-                nextLevelBtn.style.zIndex = '2001';
-                nextLevelBtn.onmouseover = function () {
-                    nextLevelBtn.style.background = 'rgb(215, 170, 6)';
-                };
-                nextLevelBtn.onmouseout = function () {
-                    nextLevelBtn.style.background = 'rgb(0, 0, 0)';
-                };
-                nextLevelBtn.onclick = function () {
-                    loadingScreen = false;
-                    factDisplayed = false;
-                    WATER_BAR_WIDTH = 0;
-                    lvl++; // advance to next level
-                    lvlStats(); //adjust stats for the new level
-                    timerSeconds = MaxSeconds; // or whatever value you want for each level
-                    // Remove loading screen and button
-                    loadingContainer.remove();
-                    nextLevelBtn.remove();
-                    dayComplete.remove();
-                    startGame();
-                };
-                document.body.appendChild(nextLevelBtn);
-            }, 0);
+            };
+            nextLevelBtn.onclick = function () {
+                loadingScreen = false;
+                factDisplayed = false;
+                WATER_BAR_WIDTH = 0;
+                lvl++; // advance to next level
+                lvlStats(); //adjust stats for the new level
+                timerSeconds = MaxSeconds; // or whatever value you want for each level
+                // Remove loading screen and button
+                loadingContainer.remove();
+                startGame();
+            };
+            loadingContainer.appendChild(nextLevelBtn);
+
+            document.body.appendChild(loadingContainer);
         }, 0);
     } else if (lvl < 0 && !loadingScreen) {
         // Game Over screen

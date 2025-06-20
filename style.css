@@ -141,23 +141,26 @@ body {
   color: white;
   font-family: 'Tribeca', Arial, sans-serif;
   text-align: center;
+  gap: 32px; /* consistent vertical spacing between children */
+  min-width: 400px;
 }
 
 #dayCompleteText {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%);
+  position: static;
+  left: unset;
+  transform: none;
   font-family: 'Tribeca', Arial, sans-serif;
   font-size: 2.5rem;
-  color: #111;
+  color: rgb(255, 213, 0);
   text-align: center;
   z-index: 2001;
+  margin-bottom: 0;
 }
 
 #nextLevelBtn {
-  position: absolute;
-  left: 50%;
-  transform: translateX(-50%, 0);
+  position: static;
+  left: unset;
+  transform: none;
   font-family: 'Tribeca', Arial, sans-serif;
   font-size: 1.5rem;
   padding: 12px 36px;
@@ -171,6 +174,7 @@ body {
   letter-spacing: 1px;
   text-shadow: 1px 1px 0 #1a3c4a;
   z-index: 2001;
+  margin-top: 0;
 }
 
 #nextLevelBtn:hover {
@@ -184,10 +188,56 @@ body {
   transform: translateX(-50%);
   font-family: 'Tribeca', Arial, sans-serif;
   font-size: 2.2rem;
-  color: #111;
-  background: rgba(255,255,255,0.85);
+  color: rgba(255, 214, 7, 0.85);
+  background: rgba(0, 0, 0, 0.85);
   padding: 8px 32px;
   border-radius: 12px;
   z-index: 3000;
   text-align: center;
+}
+
+#dayCounter {
+  position: absolute;
+  left: 0;
+  margin-left: 0;
+  margin-top: 5px;
+  top: unset;
+  font-family: 'Tribeca', Arial, sans-serif;
+  font-size: 2.2rem;
+  color: rgba(255, 214, 7, 0.85);
+  background: rgba(0, 0, 0, 0.85);
+  padding: 6px 18px;
+  border-radius: 10px;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(52,152,219,0.10);
+}
+
+#scoreCounter {
+  position: absolute;
+  right: 0;
+  top: unset;
+  margin-right: 0;
+  margin-top: 5px;
+  font-family: 'Tribeca', Arial, sans-serif;
+  font-size: 2.2rem;
+  color: rgba(255, 214, 7, 0.85);
+  background: rgba(0, 0, 0, 0.85);
+  padding: 6px 18px;
+  border-radius: 10px;
+  z-index: 100;
+  box-shadow: 0 2px 8px rgba(52,152,219,0.10);
+}
+
+#gameCanvas {
+  display: block;
+  margin: 0 auto;
+  position: relative;
+  z-index: 1;
+  pointer-events: none;
+}
+
+.canvas-container {
+  position: relative;
+  width: fit-content;
+  margin: 0 auto;
 }
