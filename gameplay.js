@@ -30,17 +30,17 @@ let village_Bar_Outline_Width = village_water_width + village_water_height / 2;
 let bar_distance_from_village = 80;
 let offsetX = (village_Bar_Outline_Width - village_water_width) / 2;
 let offsetY = village_water_height / 4;
-village_drain_speed = 3; //intial: 2
+village_drain_speed = 2; //intial: 2
 
 let refillSpeed = 0.7; //the speed in which players bucket will refill (initial: 0.7)
 let drainSpeed = 1.75; //the speed in which players bucket will drain (initial: 1.75)
 
 let keydown = false;
 
-const WATER_MAX = 100;
+const WATER_MAX = 104;
 
 // Timer variables
-let MaxSeconds = 60; // (initial: 60 (1 minute))
+let MaxSeconds = 5; // (initial: 60 (1 minute))
 let timerSeconds = MaxSeconds;
 let timerInterval = null;
 let timeDepletionRate = 1;
@@ -483,7 +483,7 @@ function startGame() {
             const dy = playerCircle.y - closestY;
             const distanceSq = dx * dx + dy * dy;
 
-            if (distanceSq <= playerCircle.r * playerCircle.r && WATER_BAR_WIDTH < WATER_MAX && !keydown) {
+            if (distanceSq <= playerCircle.r * playerCircle.r && WATER_BAR_WIDTH <= WATER_MAX && !keydown) {
                 WATER_BAR_WIDTH += refillSpeed;
 
             }
@@ -672,7 +672,11 @@ function startGame() {
                 fact = Math.floor(Math.random() * charityFacts.length);
                 factDisplayed = true;
             }
-            loadingTitle.innerText = charityFacts[fact];
+            if(lvl == 7) {
+                loadingTitle.innerText = "Congratualtions on making it through your first week of volunteering! Feel free to stick around for as long as you'd like. We could really use the help. Keep up the great work!"
+            } else {
+                loadingTitle.innerText = charityFacts[fact];
+            }
             loadingContainer.appendChild(loadingTitle);
 
             // Next level button
@@ -726,14 +730,15 @@ function startGame() {
 function lvlStats() {
     // Only update player properties if player is defined
     if (lvl == 2) {
-        village_drain_speed = 3.5; //Increase speed villages will drain
+        village_drain_speed = 2.3; //Increase speed villages will drain
 
     } else if (lvl == 3) {
         villageSpawnAmount = 4; //Add a village
         drainSpeed = 1.6; //Player Buff (increases bucket size)
+        village_drain_speed = 2.1; //Increase speed villages will drain
     } else if (lvl == 4) {
         if (typeof player !== "undefined") player.speed = 6; //Player Buff (player speed increased)
-        village_drain_speed = 3.7; //Increase speed villages will drain
+        village_drain_speed = 2; //Increase speed villages will drain
     } else if (lvl == 5) {
         villageSpawnAmount = 5; //Add a village
         if (typeof player !== "undefined") player.speed = 6.5; //Player Buff (player speed increased)
@@ -741,13 +746,17 @@ function lvlStats() {
     } else if (lvl == 6) {
         if (typeof player !== "undefined") player.speed = 7.5; //Player Buff (player speed increased)
         villageSpawnAmount = 6; //Add a village
-        village_drain_speed = 3.4; //Decrease speed villages will drain
+        village_drain_speed = 1.8; //Decrease speed villages will drain
     } else if (lvl == 7) {
         villageSpawnAmount = 7; //Add a village
         drainSpeed = 1.2; //Player Buff (increases bucket size by decreasing drain speed)
         if (typeof player !== "undefined") player.speed = 8; //Player Buff (player speed increased)
+    } else if (lvl > 7) {
+        village_drain_speed += 0.1; //Increase speed villages will drain each round
+        drainSpeed += 0.01; //Increases players bucket size each round
+        if (typeof player !== "undefined") player.speed += 0.05;
     }
-    console.log("level stats adjusted for day ", lvl);
+   console.log("level stats adjusted for day ", lvl);
 }
 
 lvlStats(); //only used for testing -- not required for actual game
