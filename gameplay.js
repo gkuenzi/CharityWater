@@ -40,7 +40,7 @@ let keydown = false;
 const WATER_MAX = 104;
 
 // Timer variables
-let MaxSeconds = 5; // (initial: 60 (1 minute))
+let MaxSeconds = 60; // (initial: 60 (1 minute))
 let timerSeconds = MaxSeconds;
 let timerInterval = null;
 let timeDepletionRate = 1;
@@ -755,6 +755,7 @@ function lvlStats() {
         village_drain_speed += 0.1; //Increase speed villages will drain each round
         drainSpeed += 0.01; //Increases players bucket size each round
         if (typeof player !== "undefined") player.speed += 0.05;
+        MaxSeconds += 5;
     }
    console.log("level stats adjusted for day ", lvl);
 }
