@@ -759,5 +759,6 @@ function lvlStats() {
    console.log("level stats adjusted for day ", lvl);
 }
 
+//Initial Start
 lvlStats(); //only used for testing -- not required for actual game
 startGame();
