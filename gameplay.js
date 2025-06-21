@@ -40,7 +40,7 @@ let keydown = false;
 const WATER_MAX = 104;
 
 // Timer variables
-let MaxSeconds = 60; // (initial: 60 (1 minute))
+let MaxSeconds = 60; // (initial: 60(1 minute))
 let timerSeconds = MaxSeconds;
 let timerInterval = null;
 let timeDepletionRate = 1;
