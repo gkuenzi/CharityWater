@@ -3,6 +3,7 @@ const ctx = canvas.getContext('2d');
 
 let lvl = 0; // 0 == start screen, -1 == game over
 let score = 0;
+let attempts = 3;
 let loadingScreen = false; //Determines if a loading screen is active or not
 let fact = 0;
 let factDisplayed = false;
@@ -330,6 +331,10 @@ function startGame() {
                 images.push({ x, y });
             }
             return images;
+        }
+
+        function spawnAnimals() {
+
         }
 
         let randomImages = [];
@@ -711,6 +716,8 @@ function startGame() {
         if (existingGameOver) existingGameOver.remove();
         let existingCharity = document.getElementById('charityWaterBox');
         if (existingCharity) existingCharity.remove();
+        let existing_Try_Again_Btn = document.getElementById('tryAgainBtn');
+         if (existing_Try_Again_Btn) existing_Try_Again_Btn.remove();
 
         // Game Over box
         const gameOverDiv = document.createElement('div');
@@ -722,8 +729,13 @@ function startGame() {
         charityDiv.id = 'charityWaterBox';
         charityDiv.innerHTML = `Be sure to check out charity: water at <a href="https://www.charitywater.org/" target="_blank">charitywater.org</a>`;
 
+        const tryAgainBtn = document.createElement('button');
+        tryAgainBtn.id = 'tryAgainBtn';
+        tryAgainBtn.innerText = 'Try Again (' + attempts + ' left)';
+
         document.body.appendChild(gameOverDiv);
         document.body.appendChild(charityDiv);
+        document.body.appendChild(tryAgainBtn);
     }
 };
 

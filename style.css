@@ -119,6 +119,11 @@ body {
   z-index: 2001;
 }
 
+#tryAgainBtn {
+/* currently this is stuck outside of the canvas. put 
+    it in the canvas*/
+}
+
 #charityWaterBox a {
   color: #ffd700;
   text-decoration: underline;
