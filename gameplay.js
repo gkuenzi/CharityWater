@@ -78,7 +78,7 @@ function updateTimerDisplay(running) {
         timerDiv.style.transform = 'translateX(-50%)';
         timerDiv.style.fontFamily = "'Tribeca', Arial, sans-serif";
         timerDiv.style.fontSize = '2.2rem';
-        timerDiv.style.color = 'rgba(255, 214, 7, 0.85)';
+        timerDiv.style.color = 'rgba(255, 255, 255, 0.85)';
         timerDiv.style.background = 'rgba(0, 0, 0, 0.85)';
         timerDiv.style.padding = '8px 32px';
         timerDiv.style.borderRadius = '12px';
