@@ -3,7 +3,7 @@ const ctx = canvas.getContext('2d');
 
 let lvl = 0; // 0 == start screen, -1 == game over
 let score = 0;
-let attempts = 3;
+let attempts = 3; //Not useful yet
 let loadingScreen = false; //Determines if a loading screen is active or not
 let fact = 0;
 let factDisplayed = false;
@@ -884,7 +884,7 @@ function startGame() {
             attempts = 3;
             WATER_BAR_WIDTH = 0;
             villageSpawnAmount = 3;
-            village_drain_speed = 5;
+            village_drain_speed = 3;
             drainSpeed = 1.75;
             refillSpeed = 0.7;
             MaxSeconds = 60;
@@ -949,3 +949,10 @@ function lvlStats() {
 //Initial Start
 lvlStats(); //only used for testing -- not required for actual game
 startGame();
+alert(
+  'Welcome, Volunteer!\n' +
+  'You\'re part of an important mission with charity: water — bringing clean water to villages in need.\n' +
+  'Your job is to deliver full containers of water to each village safely and efficiently.\n\n' +
+  'Keep an eye out as you travel — if you spot any animals, steer clear! They might be thirsty too, and we need to make sure the water gets to the people who need it most.\n\n' +
+  'Good luck, and thank you for making a difference!'
+);
