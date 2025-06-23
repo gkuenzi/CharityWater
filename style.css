@@ -119,9 +119,17 @@ body {
   z-index: 2001;
 }
 
-#tryAgainBtn {
-/* currently this is stuck outside of the canvas. put 
-    it in the canvas*/
+#restartBtn {
+  font-size: 3rem;
+  background-color: rgba(255, 255, 255, 0.9);
+  color:#000000;
+  font-family: 'Tribeca', Arial, sans-serif;
+  border-radius: 10%;
+  margin: 1rem;
+  
+}
+#restartBtn:hover {
+  background: #ffd700;
 }
 
 #charityWaterBox a {

@@ -31,10 +31,19 @@ let village_Bar_Outline_Width = village_water_width + village_water_height / 2;
 let bar_distance_from_village = 80;
 let offsetX = (village_Bar_Outline_Width - village_water_width) / 2;
 let offsetY = village_water_height / 4;
-village_drain_speed = 2; //intial: 2
+let village_drain_speed = 3; //intial: 3
+
+let randomImages = null;
+
+let animalSpawnAmount = 0; // initial: 0
+let animal_drain_speed = 3;
 
 let refillSpeed = 0.7; //the speed in which players bucket will refill (initial: 0.7)
-let drainSpeed = 1.75; //the speed in which players bucket will drain (initial: 1.75)
+let drainSpeed = 1.5; //the speed in which players bucket will drain (initial: 1.5)
+
+//delayed spawns that will be used for days greater than 7 to make sure they arent happening daily
+let delayed_animal_spawns = 0;
+let delayed_village_spawns = 0;
 
 let keydown = false;
 
@@ -268,6 +277,8 @@ function startGame() {
         const spawnImg = new Image();
         spawnImg.src = spawnImgSrc;
 
+
+
         function spawnRandomImages(amount) {
             const images = [];
             const minDist = spawnImg.width; // Minimum allowed distance between centers
@@ -333,46 +344,133 @@ function startGame() {
             return images;
         }
 
-        function spawnAnimals() {
+        // Animal image sources
+        const animalImgSources = [
+            'img/Screenshot 2025-06-22 194803-Photoroom.png',
+            'img/Screenshot 2025-06-22 194837-Photoroom.png',
+            'img/Transp_Elephant-Photoroom.png'
+        ];
 
+        // Preload animal images
+        const animalImgs = animalImgSources.map(src => {
+            const img = new Image();
+            img.src = src;
+            return img;
+        });
+
+        // Global animal image and array
+        let animals = [];
+
+        function spawnAnimals() {
+            animals = [];
+            // Wait for all animal images to load
+            if (animalImgs.some(img => !img.complete)) {
+                animalImgs.forEach(img => { img.onload = spawnAnimals; });
+                return;
+            }
+            let tries = 0;
+            for (let i = 0; i < animalSpawnAmount; i++) {
+                let animalX, animalY, valid, rotation, imgIdx, animalRadius;
+                do {
+                    // Only spawn in bottom right two-thirds
+                    const minX = canvas.width / 3;
+                    const maxX = canvas.width - animalImgs[0].width / 2;
+                    const minY = canvas.height / 3;
+                    const maxY = canvas.height - animalImgs[0].height / 2;
+                    animalX = Math.random() * (maxX - minX) + minX;
+                    animalY = Math.random() * (maxY - minY) + minY;
+                    rotation = Math.random() * Math.PI * 2;
+                    imgIdx = Math.floor(Math.random() * animalImgs.length);
+                    // Set radius based on image size
+                    const src = animalImgSources[imgIdx];
+                    if (src === 'img/Screenshot 2025-06-22 194803-Photoroom.png' || src === 'img/Screenshot 2025-06-22 194837-Photoroom.png') {
+                        animalRadius = animalImgs[imgIdx].width * 0.5 / 2; // 1/2 width for smaller collision
+                    } else {
+                        animalRadius = animalImgs[imgIdx].width / 2;
+                    }
+                    valid = true;
+                    // Prevent overlap with villages
+                    if (isAnimalTouchingVillage(animalX, animalY, animalRadius, randomImages)) valid = false;
+                    // Prevent overlap with truck
+                    const truckX = canvas.width - canvas.width / 18;
+                    const truckY = canvas.height - canvas.height / 6;
+                    const truckW = 115;
+                    const truckH = 230;
+                    const truckLeft = truckX - truckW / 2;
+                    const truckRight = truckX + truckW / 2;
+                    const truckTop = truckY - truckH / 2;
+                    const truckBottom = truckY + truckH / 2;
+                    const animalLeft = animalX - animalRadius;
+                    const animalRight = animalX + animalRadius;
+                    const animalTop = animalY - animalRadius;
+                    const animalBottom = animalY + animalRadius;
+                    if (
+                        animalRight > truckLeft &&
+                        animalLeft < truckRight &&
+                        animalBottom > truckTop &&
+                        animalTop < truckBottom
+                    ) {
+                        valid = false;
+                    }
+                    // Prevent animals from spawning too close to each other
+                    for (const other of animals) {
+                        const dx = animalX - other.x;
+                        const dy = animalY - other.y;
+                        const dist = Math.sqrt(dx * dx + dy * dy);
+                        if (dist < animalRadius + other.radius) {
+                            valid = false;
+                            break;
+                        }
+                    }
+                    tries++;
+                    if (tries > 1000) break;
+                } while (!valid);
+                animals.push({ x: animalX, y: animalY, radius: animalRadius, rotation, active: true, imgIdx });
+            }
         }
 
-        let randomImages = [];
+        function isAnimalTouchingVillage(animalX, animalY, animalRadius, villages) {
+            for (const village of villages) {
+                const dx = animalX - village.x;
+                const dy = animalY - village.y;
+                const dist = Math.sqrt(dx * dx + dy * dy);
+                if (dist < animalRadius + (spawnImg.width / 2)) {
+                    return true; // Overlaps!
+                }
+            }
+            return false; // No overlap
+        }
+
         spawnImg.onload = function () {
             randomImages = spawnRandomImages(villageSpawnAmount);
-            // Initialize each village's blue bar width and calculate distance to truck
-            villageBars = randomImages.map(obj => {
-                // Calculate distance from village to truck center
+            // Calculate max and min distance for normalization
+            let distances = randomImages.map(obj => {
+                const dx = obj.x - truck.x;
+                const dy = obj.y - truck.y;
+                return Math.sqrt(dx * dx + dy * dy);
+            });
+            const minDist = Math.min(...distances);
+            const maxDist = Math.max(...distances);
+            // Assign per-village drain modifier (further = slower)
+            villageBars = randomImages.map((obj, idx) => {
                 const dx = obj.x - truck.x;
                 const dy = obj.y - truck.y;
                 const dist = Math.sqrt(dx * dx + dy * dy);
+                // Normalize: 0 (closest) to 1 (furthest)
+                let norm = (maxDist - minDist) > 0 ? (dist - minDist) / (maxDist - minDist) : 0;
+                // Modifier: closer = 1, furthest = 0.7 (tweak as needed)
+                let drainMod = 1 - 0.3 * norm;
                 return {
                     x: obj.x,
                     y: obj.y,
                     width: village_water_width,
-                    distanceToTruck: dist
+                    distanceToTruck: dist,
+                    drainMod: drainMod
                 };
             });
-            draw(); // Redraw after images are spawned
-
-            // Find min and max distance for normalization
-            const distances = villageBars.map(bar => bar.distanceToTruck);
-            const minDist = Math.min(...distances);
-            const maxDist = Math.max(...distances);
-
-            // Start timer to decrease all village bars every second
-            if (!loadingScreen) {
-                setInterval(() => {
-                    villageBars.forEach(bar => {
-                        if (bar.width > 0) {
-                            let norm = (bar.distanceToTruck - minDist) / (maxDist - minDist || 1);
-                            let speedFactor = 1 - norm * 0.5; // up to 50% slower for farthest
-                            let drain = (village_drain_speed / 100) * speedFactor;
-                            bar.width = Math.max(0, bar.width - drain);
-                        }
-                    });
-                }, 1);
-            }
+            draw();
+            spawnAnimals(); // Now spawn animals after villages
+            // ...existing code...
         };
 
         player.img.onload = truck.img.onload = function () {
@@ -398,27 +496,29 @@ function startGame() {
             };
 
             // Draw each village and its blue bar using the tracked width
-            randomImages.forEach((obj, idx) => {
-                // Draw the image
-                ctx.drawImage(
-                    spawnImg,
-                    obj.x - spawnImg.width / 2,
-                    obj.y - spawnImg.height / 2
-                );
+            if (randomImages != null) {
+                randomImages.forEach((obj, idx) => {
+                    // Draw the image
+                    ctx.drawImage(
+                        spawnImg,
+                        obj.x - spawnImg.width / 2,
+                        obj.y - spawnImg.height / 2
+                    );
 
-                // Draw the collision circle for the villages
-                ctx.save();
-                ctx.beginPath();
-                ctx.arc(obj.x, obj.y, spawnImg.width / 3, 0, Math.PI * 2);
-                ctx.strokeStyle = 'transparent'; // was 'red'
-                ctx.lineWidth = 2;
-                ctx.stroke();
-                ctx.closePath();
-                ctx.restore();
+                    // Draw the collision circle for the villages
+                    ctx.save();
+                    ctx.beginPath();
+                    ctx.arc(obj.x, obj.y, spawnImg.width / 3, 0, Math.PI * 2);
+                    ctx.strokeStyle = 'transparent'; // was 'red'
+                    ctx.lineWidth = 2;
+                    ctx.stroke();
+                    ctx.closePath();
+                    ctx.restore();
 
-                // Draw the blue bar with the current width
-                addVillageWaterBar(obj.x, obj.y, villageBars[idx]?.width ?? village_water_width);
-            });
+                    // Draw the blue bar with the current width
+                    addVillageWaterBar(obj.x, obj.y, villageBars[idx]?.width ?? village_water_width);
+                });
+            }
 
             // Draw the truck image
             if (truck.img.complete) {
@@ -435,6 +535,25 @@ function startGame() {
                 ctx.restore();
             }
 
+            // Draw animals
+            if (animalImgs.every(img => img.complete) && animals.length > 0) {
+                animals.forEach(animal => {
+                    if (!animal.active) return;
+                    ctx.save();
+                    ctx.translate(animal.x, animal.y);
+                    ctx.rotate(animal.rotation);
+                    const img = animalImgs[animal.imgIdx];
+                    const src = animalImgSources[animal.imgIdx];
+                    if (src === 'img/Screenshot 2025-06-22 194803-Photoroom.png' || src === 'img/Screenshot 2025-06-22 194837-Photoroom.png') {
+                        ctx.drawImage(img, -img.width * 2 / 3 / 2, -img.height * 2 / 3 / 2, img.width * 2 / 3, img.height * 2 / 3);
+                    } else {
+                        ctx.drawImage(img, -img.width / 2, -img.height / 2);
+                    }
+                    ctx.restore();
+                });
+            }
+
+            // Draw player on top of animals
             player.draw(ctx);
 
             // Clamp player position to stay within canvas borders
@@ -510,6 +629,21 @@ function startGame() {
                     }
                 });
             }
+
+            // Check collision with animals
+            if (animalImgs.every(img => img.complete) && animals.length > 0) {
+                animals.forEach(animal => {
+                    // Remove the check for !animal.active so animals never despawn
+                    const dx = player.x - animal.x;
+                    const dy = player.y - animal.y;
+                    const dist = Math.sqrt(dx * dx + dy * dy);
+                    if (dist < player.radius + animal.radius) {
+                        WATER_BAR_WIDTH = Math.max(0, WATER_BAR_WIDTH - animal_drain_speed); // Decrease water bar
+                        score = Math.max(0, score - 1); // Decrease score
+                        updateScoreCounter && updateScoreCounter();
+                    }
+                });
+            }
         }
 
         function update() {
@@ -543,6 +677,16 @@ function startGame() {
                 player.y += dy;
             }
 
+            // Drain village bars based on time and rate
+            if (lvl > 0 && !loadingScreen && timerSeconds > 0) {
+                villageBars.forEach(bar => {
+                    if (bar.width > 0) {
+                        // Use per-village drain modifier
+                        bar.width = Math.max(0, bar.width - (village_drain_speed * (bar.drainMod || 1)) / 60);
+                    }
+                });
+            }
+
             // Always redraw and check for collision, even if not moving
             draw();
             CollisionCheck();
@@ -566,7 +710,7 @@ function startGame() {
 
             requestAnimationFrame(update);
         }
-    } else if (lvl == 0) {
+    } if (lvl == 0) {
         // Draw the logo image centered above the start screen container, but inside the canvas
         function drawStartScreenLogo() {
             const logoImg = new window.Image();
@@ -675,7 +819,7 @@ function startGame() {
                 fact = Math.floor(Math.random() * charityFacts.length);
                 factDisplayed = true;
             }
-            if(lvl == 7) {
+            if (lvl == 7) {
                 loadingTitle.innerText = "Congratualtions on making it through your first week of volunteering! Feel free to stick around for as long as you'd like. We could really use the help. Keep up the great work!"
             } else {
                 loadingTitle.innerText = charityFacts[fact];
@@ -714,8 +858,11 @@ function startGame() {
         if (existingGameOver) existingGameOver.remove();
         let existingCharity = document.getElementById('charityWaterBox');
         if (existingCharity) existingCharity.remove();
-        let existing_Try_Again_Btn = document.getElementById('tryAgainBtn');
-         if (existing_Try_Again_Btn) existing_Try_Again_Btn.remove();
+        let existingRestartBtn = document.getElementById('restartBtn');
+        if (existingRestartBtn) existingRestartBtn.remove();
+
+        //Remove time from gameplay
+        timerSeconds = 0;
 
         // Game Over box
         const gameOverDiv = document.createElement('div');
@@ -727,48 +874,77 @@ function startGame() {
         charityDiv.id = 'charityWaterBox';
         charityDiv.innerHTML = `Be sure to check out charity: water at <a href="https://www.charitywater.org/" target="_blank">charitywater.org</a>`;
 
-        const tryAgainBtn = document.createElement('button');
-        tryAgainBtn.id = 'tryAgainBtn';
-        tryAgainBtn.innerText = 'Try Again (' + attempts + ' left)';
+        // Restart button
+        const restartBtn = document.createElement('button');
+        restartBtn.id = 'restartBtn';
+        restartBtn.innerText = 'Restart';
+        restartBtn.onclick = function () {
+            lvl = 1;
+            score = 0;
+            attempts = 3;
+            WATER_BAR_WIDTH = 0;
+            villageSpawnAmount = 3;
+            village_drain_speed = 5;
+            drainSpeed = 1.75;
+            refillSpeed = 0.7;
+            MaxSeconds = 60;
+            timerSeconds = MaxSeconds;
+            loadingScreen = false;
+            factDisplayed = false;
+            // Remove game over and charity boxes
+            gameOverDiv.remove();
+            charityDiv.remove();
+            restartBtn.remove();
+            lvlStats();
+            startGame();
+        };
 
         document.body.appendChild(gameOverDiv);
         document.body.appendChild(charityDiv);
-        document.body.appendChild(tryAgainBtn);
+        document.body.appendChild(restartBtn);
     }
 };
 
 function lvlStats() {
     // Only update player properties if player is defined
     if (lvl == 2) {
-        village_drain_speed = 2.3; //Increase speed villages will drain
-
+        drainSpeed = 1.6; //Decreases player bucket size;
+        animalSpawnAmount = 3;
     } else if (lvl == 3) {
         villageSpawnAmount = 4; //Add a village
-        drainSpeed = 1.6; //Player Buff (increases bucket size)
-        village_drain_speed = 2.1; //Increase speed villages will drain
+        village_drain_speed = 3.2; //Increase speed villages will drain
     } else if (lvl == 4) {
         if (typeof player !== "undefined") player.speed = 6; //Player Buff (player speed increased)
-        village_drain_speed = 2; //Increase speed villages will drain
+        village_drain_speed = 3.3; //Increase speed villages will drain
+        animalSpawnAmount = 4;
     } else if (lvl == 5) {
         villageSpawnAmount = 5; //Add a village
         if (typeof player !== "undefined") player.speed = 6.5; //Player Buff (player speed increased)
         drainSpeed = 1.7; //Player Nerf (increases bucket size by decreasing drain speed)
     } else if (lvl == 6) {
         if (typeof player !== "undefined") player.speed = 7.5; //Player Buff (player speed increased)
-        villageSpawnAmount = 6; //Add a village
-        village_drain_speed = 1.8; //Decrease speed villages will drain
+        village_drain_speed = 3; //Decrease speed villages will drain back to initial
     } else if (lvl == 7) {
-        villageSpawnAmount = 7; //Add a village
-        drainSpeed = 1.2; //Player Buff (increases bucket size by decreasing drain speed)
+        villageSpawnAmount = 6; //Add a village
         if (typeof player !== "undefined") player.speed = 8; //Player Buff (player speed increased)
     } else if (lvl > 7) {
         village_drain_speed += 0.1; //Increase speed villages will drain each round
         drainSpeed += 0.01; //Increases players bucket size each round
         if (typeof player !== "undefined") player.speed += 0.05;
         MaxSeconds += 5;
+        delayedStats++;
+        if (delayed_animal_spawns >= 2) {
+            animalSpawnAmount += 1;
+            delayed_animal_spawns = 0;
+        }
+        if (delayed_village_spawns >= 5) {
+            villageSpawnAmount += 1;
+            delayed_village_spawns = 0;
+        }
     }
-   console.log("level stats adjusted for day ", lvl);
+    console.log("level stats adjusted for day ", lvl);
 }
+
 
 //Initial Start
 lvlStats(); //only used for testing -- not required for actual game
