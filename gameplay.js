@@ -365,9 +365,7 @@ function startGame() {
                 setInterval(() => {
                     villageBars.forEach(bar => {
                         if (bar.width > 0) {
-                            // Normalize distance (0 = closest, 1 = farthest)
                             let norm = (bar.distanceToTruck - minDist) / (maxDist - minDist || 1);
-                            // Invert so farther = slower drain
                             let speedFactor = 1 - norm * 0.5; // up to 50% slower for farthest
                             let drain = (village_drain_speed / 100) * speedFactor;
                             bar.width = Math.max(0, bar.width - drain);
