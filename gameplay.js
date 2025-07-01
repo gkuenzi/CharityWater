@@ -811,19 +811,30 @@ function startGame() {
             dayComplete.id = 'dayCompleteText';
             dayComplete.innerText = 'Day ' + lvl + ' complete!';
             loadingContainer.appendChild(dayComplete);
+            
+            const factLabel = document.createElement('div');
 
             // Fact container
             const loadingTitle = document.createElement('div');
-            loadingTitle.className = 'title';
+            
+
             if (!factDisplayed) {
                 fact = Math.floor(Math.random() * charityFacts.length);
                 factDisplayed = true;
             }
             if (lvl == 7) {
+                factLabel.innerText = 'Congratulations!';
                 loadingTitle.innerText = "Congratualtions on making it through your first week of volunteering! Feel free to stick around for as long as you'd like. We could really use the help. Keep up the great work!"
+                // Changes the loading containers font and background color
+                loadingContainer.style.backgroundColor = 'rgba(255, 201, 7, 0.8)';
+                dayComplete.style.color = 'white';
+
             } else {
+                factLabel.innerText = 'Fact:';
+                loadingTitle.className = 'title';
                 loadingTitle.innerText = charityFacts[fact];
             }
+            loadingContainer.appendChild(factLabel);
             loadingContainer.appendChild(loadingTitle);
 
             // Next level button
@@ -932,7 +943,9 @@ function lvlStats() {
         drainSpeed += 0.01; //Increases players bucket size each round
         if (typeof player !== "undefined") player.speed += 0.05;
         MaxSeconds += 5;
-        delayedStats++;
+        delayed_animal_spawns++;
+        delayed_village_spawns++;
+
         if (delayed_animal_spawns >= 2) {
             animalSpawnAmount += 1;
             delayed_animal_spawns = 0;

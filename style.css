@@ -68,6 +68,16 @@ body {
   text-shadow: 2px 2px 0 #3b2e13, 0 2px 8px #00000055;
 }
 
+#startScreenContainer .finalTitle {
+  font-family: 'Tribeca', Arial, sans-serif;
+  font-size: 2.5rem;
+  margin-bottom: 24px;
+  text-align: center;
+  letter-spacing: 2px;
+  color: #ffffff;
+  text-shadow: 2px 2px 0 #3b2e13, 0 2px 8px #00000055;
+}
+
 #startScreenContainer button {
   font-family: 'Tribeca', Arial, sans-serif;
   font-size: 1.5rem;
