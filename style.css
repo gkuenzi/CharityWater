@@ -265,3 +265,20 @@ body {
   width: fit-content;
   margin: 0 auto;
 }
+
+/* Toggle image and label styles for start screen */
+#modeToggleImg {
+  display: block;
+  margin: 16px auto 8px auto;
+  width: 85px; /* 97 * 2.1 */
+  height: 52px; /* 60 * 2.1 */
+  cursor: pointer;
+}
+
+#modeToggleLabel {
+  text-align: center;
+  font-size: 1.1rem;
+  margin-bottom: 2px;
+  font-family: 'Tribeca', Arial, sans-serif;
+  color: #fff;
+}
