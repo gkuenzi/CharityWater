@@ -1,6 +1,12 @@
 const canvas = document.getElementById('gameCanvas');
 const ctx = canvas.getContext('2d');
 
+// REMINDER!!!!!!!
+//Mode Toggle doesn't work && still needs a label under it
+//Alert is currently commented out at bottom
+
+
+
 let lvl = 0; // 0 == start screen, -1 == game over
 let score = 0;
 let attempts = 3; //Not useful yet
@@ -54,6 +60,15 @@ let MaxSeconds = 60; // (initial: 60(1 minute))
 let timerSeconds = MaxSeconds;
 let timerInterval = null;
 let timeDepletionRate = 1;
+
+// define initial toggle
+const modeToggleImg = new Image();
+modeToggleImg.src = 'img/normal-mode-toggle-Photoroom.png';
+modeToggleScale = 2.1;
+const modeToggleWidth = 97 * modeToggleScale;  // Change as needed
+const modeToggleHeight = 60 * modeToggleScale; // Change as needed
+const toggleX = canvas.width * 0.005;
+const toggleY = canvas.height * 0.005;
 
 // Function to start and update the countdown timer
 function startTimer() {
@@ -749,6 +764,10 @@ function startGame() {
                 ctx.restore();
                 // Draw logo
                 ctx.drawImage(logoImg, logoX, logoY, logoWidth, logoHeight);
+                // Draw modeToggle image below the logo
+                if (modeToggleImg.complete) {
+                    ctx.drawImage(modeToggleImg, toggleX, toggleY, modeToggleWidth, modeToggleHeight);
+                }
             };
         }
         drawStartScreenLogo();
@@ -811,12 +830,12 @@ function startGame() {
             dayComplete.id = 'dayCompleteText';
             dayComplete.innerText = 'Day ' + lvl + ' complete!';
             loadingContainer.appendChild(dayComplete);
-            
+
             const factLabel = document.createElement('div');
 
             // Fact container
             const loadingTitle = document.createElement('div');
-            
+
 
             if (!factDisplayed) {
                 fact = Math.floor(Math.random() * charityFacts.length);
@@ -962,10 +981,10 @@ function lvlStats() {
 //Initial Start
 lvlStats(); //only used for testing -- not required for actual game
 startGame();
-alert(
-  'Welcome, Volunteer!\n' +
-  'You\'re part of an important mission with charity: water — bringing clean water to villages in need.\n' +
-  'Your job is to deliver full containers of water to each village safely and efficiently.\n\n' +
-  'Keep an eye out as you travel — if you spot any animals, steer clear! They might be thirsty too, and we need to make sure the water gets to the people who need it most.\n\n' +
-  'Good luck, and thank you for making a difference!'
-);
+// alert(
+//     'Welcome, Volunteer!\n' +
+//     'You\'re part of an important mission with charity: water — bringing clean water to villages in need.\n' +
+//     'Your job is to deliver full containers of water to each village safely and efficiently.\n\n' +
+//     'Keep an eye out as you travel — if you spot any animals, steer clear! They might be thirsty too, and we need to make sure the water gets to the people who need it most.\n\n' +
+//     'Good luck, and thank you for making a difference!'
+// );
